@@ -1,8 +1,7 @@
 import os
 import asyncio
-from datetime import time
+from datetime import datetime
 from telegram import Bot
-from telegram.ext import Application, CommandHandler
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
@@ -15,27 +14,27 @@ CONTACTS = [
 ]
 
 SEND_DAYS = [0, 2, 4]
+SEND_HOUR = 8
 
-async def send_greetings(context):
-    from datetime import datetime
-    today = datetime.now().weekday()
-    if today in SEND_DAYS:
-        for contact in CONTACTS:
-            try:
-                await context.bot.send_message(chat_id=contact["id"], text=contact["greeting"])
-                print(f"✅ Отправлено: {contact['name']}")
-            except Exception as e:
-                print(f"❌ Ошибка {contact['name']}: {e}")
+async def send_greetings():
+    bot = Bot(token=BOT_TOKEN)
+    for contact in CONTACTS:
+        try:
+            await bot.send_message(chat_id=contact["id"], text=contact["greeting"])
+            print(f"✅ Отправлено: {contact['name']}")
+        except Exception as e:
+            print(f"❌ Ошибка {contact['name']}: {e}")
 
-async def start(update, context):
-    await update.message.reply_text("Бот утренних приветствий работает! 🌅")
-
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.job_queue.run_daily(send_greetings, time=time(8, 0))
-    print("Бот запущен!")
-    app.run_polling()
+async def main():
+    while True:
+        now = datetime.now()
+        if now.weekday() in SEND_DAYS and now.hour == SEND_HOUR and now.minute == 0:
+            print("Отправляю приветствия...")
+            await send_greetings()
+            await asyncio.sleep(61)
+        else:
+            await asyncio.sleep(30)
 
 if __name__ == "__main__":
-    main()
+    print("Бот запущен!")
+    asyncio.run(main())
