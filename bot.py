@@ -1,8 +1,8 @@
 import os
 import asyncio
-from datetime import datetime
+from datetime import time
 from telegram import Bot
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
@@ -14,17 +14,15 @@ CONTACTS = [
     {"id": 6675950007, "name": "Шухрат", "greeting": "Доброе утро, Шухрат! Желаю отличного дня и успехов во всём ☀️"},
 ]
 
-SEND_DAYS = [0, 2, 4]  # Понедельник, Среда, Пятница
-SEND_HOUR = 8
-SEND_MINUTE = 0
+SEND_DAYS = [0, 2, 4]
 
-async def send_greetings(context: ContextTypes.DEFAULT_TYPE):
+async def send_greetings(context):
+    from datetime import datetime
     today = datetime.now().weekday()
     if today in SEND_DAYS:
-        bot = context.bot
         for contact in CONTACTS:
             try:
-                await bot.send_message(chat_id=contact["id"], text=contact["greeting"])
+                await context.bot.send_message(chat_id=contact["id"], text=contact["greeting"])
                 print(f"✅ Отправлено: {contact['name']}")
             except Exception as e:
                 print(f"❌ Ошибка {contact['name']}: {e}")
@@ -35,10 +33,7 @@ async def start(update, context):
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.job_queue.run_daily(
-        send_greetings,
-        time=datetime.strptime(f"{SEND_HOUR}:{SEND_MINUTE}", "%H:%M").time(),
-    )
+    app.job_queue.run_daily(send_greetings, time=time(8, 0))
     print("Бот запущен!")
     app.run_polling()
 
